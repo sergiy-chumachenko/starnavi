@@ -10,6 +10,9 @@ django-environ = "*"
 django-rest-framework = "*"
 djoser = "*"
 djangorestframework-simplejwt = "*"
+clearbit = "*"
+pyhunter = "*"
+faker = "*"
 
 [dev-packages]
 

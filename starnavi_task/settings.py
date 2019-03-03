@@ -26,6 +26,9 @@ env = environ.Env(
     DJANGO_STATIC_ROOT=(str, str(ROOT_DIR('static'))),
     DJANGO_MEDIA_ROOT=(str, str(ROOT_DIR('media'))),
     DJANGO_DATABASE_URL=(str, 'postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}'),
+    CLEARBIT_API_SECRET_KEY=(str, 'CLEARBIT_API_SECRET_KEY'),
+    HUNTER_API_SECRET_KEY=(str, 'HUNTER_API_SECRET_KEY'),
+    HUNTER_VERIFICATION_LIMIT=(str, 'HUNTER_VERIFICATION_LIMIT')
 )
 
 environ.Env.read_env(env_file=os.path.join(str(ROOT_DIR), '.env'))
@@ -58,7 +61,8 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'posts'
+    'posts',
+    'users'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -167,6 +171,12 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(minutes=30)
+    # 'JWT_EXPIRATION_DELTA': datetime.timedelta(minutes=30)
 }
-APPEND_SLASH=False
+APPEND_SLASH = False
+
+CLEARBIT_API_SECRET_KEY = env.str("CLEARBIT_API_SECRET_KEY")
+
+HUNTER_IS_ACTIVE = False
+HUNTER_API_SECRET_KEY = env.str("HUNTER_API_SECRET_KEY")
+HUNTER_VERIFICATION_LIMIT = env.int("HUNTER_VERIFICATION_LIMIT")
