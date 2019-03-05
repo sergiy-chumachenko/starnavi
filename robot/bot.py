@@ -27,27 +27,48 @@ class Bot(object):
             return auth_data
         return None
 
-    def create_posts(self, auth_data):
+    def jwt_verify(self, auth_data):
         jwt_access = auth_data.get('access')
         jwt_refresh = auth_data.get('refresh')
+        jwt_verification = requests.post(url=self.url + 'login/verify',
+                                         headers={'Authorization': f"JWT {jwt_access}"},
+                                         data={'token': jwt_access})
+        if jwt_verification.status_code != 200:
+            response = requests.post(url=self.url + 'login/refresh',
+                                     headers={'Authorization': f"JWT {jwt_refresh}"})
+            auth_data = json.loads(response.content)
+            jwt_access = auth_data.get('access')
+            jwt_refresh = auth_data.get('refresh')
+        return jwt_access, jwt_refresh
+
+    def create_posts(self, auth_data):
         post_counter = 0
         for _ in range(random.randint(1, int(self.max_posts_per_user))):
             post_data = {
                 'title': fake.sentence(nb_words=6, variable_nb_words=True, ext_word_list=None),
                 'body': fake.text(max_nb_chars=250, ext_word_list=None)
             }
-            jwt_verification = requests.post(url=self.url + 'login/verify',
-                                             headers={'Authorization': f"JWT {jwt_access}"},
-                                             data={'token': jwt_access})
-            if jwt_verification.status_code != 200:
-                response = requests.post(url=self.url + 'login/refresh',
-                                         headers={'Authorization': f"JWT {jwt_refresh}"})
-                auth_data = json.loads(response.content)
-                jwt_access = auth_data.get('access')
-                jwt_refresh = auth_data.get('refresh')
+            jwt_access, jwt_refresh = self.jwt_verify(auth_data=auth_data)
             response = requests.post(url=self.url + 'api/posts',
                                      headers={'Authorization': f"JWT {jwt_access}"},
                                      data=post_data)
             if response.status_code == 201:
                 post_counter += 1
-        print(f'{post_counter} posts has created!')
+        return post_counter
+
+    def create_likes(self, auth_data):
+        jwt_access, jwt_refresh = self.jwt_verify(auth_data=auth_data)
+        response = requests.get(url=self.url + 'api/posts',
+                                headers={'Authorization': f"JWT {jwt_access}"})
+        posts = json.loads(response.text)
+        actions = 0
+        while actions < random.randint(1, int(self.max_likes_per_user)):
+            slug = posts[random.randint(0, len(posts) - 1)].get('slug')
+            response = requests.post(url=self.url + f'api/posts/{slug}/like',
+                                     headers={'Authorization': f"JWT {jwt_access}"})
+            if response.status_code == 401:
+                jwt_access, jwt_refresh = self.jwt_verify(auth_data=auth_data)
+                requests.post(url=self.url + f'api/posts/{slug}/like',
+                              headers={'Authorization': f"JWT {jwt_access}"})
+            actions += 1
+        return actions
